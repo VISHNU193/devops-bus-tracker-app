@@ -5,10 +5,19 @@ import dotenv from 'dotenv';
 import stopRoutes from './route/stoproute';
 import userRoutes from './route/userroute';
 import messageRoutes from './route/messageroute';
-
+import { collectDefaultMetrics, Registry } from 'prom-client';
 dotenv.config();
 
 const app = express();
+
+
+
+// Create a metrics registry
+const register = new Registry();
+
+// Collect default metrics with the registry
+collectDefaultMetrics({ register });
+
 
 // Middleware
 app.use(cors());
@@ -19,6 +28,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api', stopRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/messages', messageRoutes);
+
+app.get('/metrics', async (req:express.Request, res: express.Response) => {
+  res.set('Content-Type', register.contentType);
+  res.send(await register.metrics());
+});
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
